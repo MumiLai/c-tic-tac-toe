@@ -91,12 +91,32 @@ char check_winner(char board[3][3]) {
     return ' ';
 }
 
-// 電腦下棋(隨機亂數）：從所有空格中隨機挑一格，回傳位置 1~9
-int computer_move(char board[3][3]) {
-    int empty[9];    // 存放所有空格的編號
-    int count = 0;   // 目前找到幾個空格
-
+// 找出 symbol 下一手能贏的位置，找不到就回傳 0
+int find_winning_move(char board[3][3], char symbol) {
     for (int pos = 1; pos <= 9; pos++) {
+        int row = (pos - 1) / 3;
+        int col = (pos - 1) % 3;
+
+        if (board[row][col] == ' ') {
+            board[row][col] = symbol;               // 先試著放下去
+            char winner = check_winner(board);      // 看有沒有連成一線
+            board[row][col] = ' ';                  // 一定要還原，這只是模擬
+
+            if (winner == symbol) {
+                return pos;
+            }
+        }
+    }
+    return 0;   // 位置是 1~9，所以 0 可以代表「沒找到」
+}
+
+// 從候選位置中，隨機挑一個還是空格的；候選都被佔滿就回傳 0
+int pick_random_from(char board[3][3], const int candidates[], int n) {
+    int empty[9];
+    int count = 0;
+
+    for (int i = 0; i < n; i++) {
+        int pos = candidates[i];
         int row = (pos - 1) / 3;
         int col = (pos - 1) % 3;
         if (board[row][col] == ' ') {
@@ -105,10 +125,43 @@ int computer_move(char board[3][3]) {
         }
     }
 
-    // rand() % count 會得到 0 到 count-1，剛好可以當作 empty 陣列的索引
+    if (count == 0) {
+        return 0;
+    }
     return empty[rand() % count];
 }
 
+// 電腦下棋（規則版）：電腦固定是 O，對手是 X
+int computer_move(char board[3][3]) {
+    int pos;
+
+    // 規則 1：自己能贏就贏
+    pos = find_winning_move(board, 'O');
+    if (pos != 0) {
+        return pos;
+    }
+
+    // 規則 2：對手下一手會贏，就擋住
+    pos = find_winning_move(board, 'X');
+    if (pos != 0) {
+        return pos;
+    }
+
+    // 規則 3：中間是空的就佔中間（位置 5）
+    if (board[1][1] == ' ') {
+        return 5;
+    }
+
+    // 規則 4 和 5：先挑角落，角落都滿了才挑邊
+    const int corners[] = {1, 3, 7, 9};
+    const int edges[] = {2, 4, 6, 8};
+
+    pos = pick_random_from(board, corners, 4);
+    if (pos != 0) {
+        return pos;
+    }
+    return pick_random_from(board, edges, 4);
+}
 // 讓玩家選擇模式：1 是雙人對戰，2 是對電腦
 int choose_mode(void) {
     int mode;
