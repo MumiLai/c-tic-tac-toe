@@ -1,4 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
+
+// 清除輸入緩衝區：把這一行剩下的字元讀掉，直到換行為止
+void clear_input(void) {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {
+    }
+}
 
 // 把棋盤印出來
 void print_board(char board[3][3]) {
@@ -12,10 +20,48 @@ void print_board(char board[3][3]) {
     printf("\n");
 }
 
-// 增加勝利條件
-// 有人連成一線就回傳那個人的棋子 'X' 或 'O'，沒有就回傳 ' '
+// 反覆要求玩家輸入，直到輸入一個「1 到 9、而且還是空格」的位置才回傳
+int read_position(char board[3][3], char player) {
+    int pos;
+    int result;
+
+    while (1) {
+        printf("Player %c, choose a position (1-9): ", player);
+        result = scanf("%d", &pos);
+
+        // 輸入來源關閉（例如按了 Ctrl+Z），沒辦法再讀，直接結束程式
+        if (result == EOF) {
+            exit(0);
+        }
+
+        clear_input();   // 不論成功失敗，都把這一行剩下的內容清掉
+
+        // 檢查 1：有沒有讀到整數
+        if (result != 1) {
+            printf("That's not a number. Try again.\n");
+            continue;   // continue：跳過這一輪剩下的部分，回到迴圈開頭重新問
+        }
+
+        // 檢查 2：範圍。一定要在存取陣列「之前」檢查，不然會讀到陣列外面
+        if (pos < 1 || pos > 9) {
+            printf("Please enter a number between 1 and 9.\n");
+            continue;
+        }
+
+        // 檢查 3：走到這裡 pos 一定是 1~9，可以安全地換算成 [列][行]
+        int row = (pos - 1) / 3;
+        int col = (pos - 1) % 3;
+        if (board[row][col] != ' ') {
+            printf("That spot is already taken. Try again.\n");
+            continue;
+        }
+
+        return pos;   // 三項檢查都通過，回傳這個位置
+    }
+}
+
+// 檢查有沒有人獲勝（和上一版相同）
 char check_winner(char board[3][3]) {
-    // 檢查 3 列：同一列的三格不是空格，而且三格都一樣
     for (int i = 0; i < 3; i++) {
         if (board[i][0] != ' ' &&
             board[i][0] == board[i][1] &&
@@ -24,7 +70,6 @@ char check_winner(char board[3][3]) {
         }
     }
 
-    // 檢查 3 行：同一行的三格（列編號 0、1、2）都一樣
     for (int i = 0; i < 3; i++) {
         if (board[0][i] != ' ' &&
             board[0][i] == board[1][i] &&
@@ -33,17 +78,16 @@ char check_winner(char board[3][3]) {
         }
     }
 
-    // 檢查 2 條對角線：兩條都會經過正中間 board[1][1]
     if (board[1][1] != ' ') {
         if (board[0][0] == board[1][1] && board[1][1] == board[2][2]) {
-            return board[1][1];   // 左上到右下
+            return board[1][1];
         }
         if (board[0][2] == board[1][1] && board[1][1] == board[2][0]) {
-            return board[1][1];   // 右上到左下
+            return board[1][1];
         }
     }
 
-    return ' '; 
+    return ' ';
 }
 
 int main(void) {
@@ -54,23 +98,20 @@ int main(void) {
     };
 
     char player = 'X';
-    char winner = ' ';   // ' ' 代表目前還沒有贏家
+    char winner = ' ';
 
     for (int turn = 0; turn < 9; turn++) {
         print_board(board);
 
-        int pos;
-        printf("Player %c, choose a position (1-9): ", player);
-        scanf("%d", &pos);
+        int pos = read_position(board, player);   // 拿到的一定是有效的位置
 
         int row = (pos - 1) / 3;
         int col = (pos - 1) % 3;
         board[row][col] = player;
 
-        // 每下一手就檢查一次，有贏家就提前跳出迴圈
         winner = check_winner(board);
         if (winner != ' ') {
-            break;   // break 會立刻離開這個 for 迴圈
+            break;
         }
 
         player = (player == 'X') ? 'O' : 'X';
@@ -81,7 +122,7 @@ int main(void) {
     if (winner != ' ') {
         printf("Player %c wins!\n", winner);
     } else {
-        printf("It's a draw!\n");   // 9 手都下完還沒有贏家
+        printf("It's a draw!\n");
     }
 
     return 0;
