@@ -91,39 +91,53 @@ char check_winner(char board[3][3]) {
 }
 
 int main(void) {
-    char board[3][3] = {
-        {' ', ' ', ' '},
-        {' ', ' ', ' '},
-        {' ', ' ', ' '}
-    };
+    char again = 'n';   // 存放「要不要再玩」的回答
 
-    char player = 'X';
-    char winner = ' ';
+    // 外圈迴圈：每跑一輪就是完整的一局遊戲
+    do {
+        // 宣告在外圈裡面，每一局開始都會重新建立：棋盤清空、X 先手、還沒有贏家
+        char board[3][3] = {
+            {' ', ' ', ' '},
+            {' ', ' ', ' '},
+            {' ', ' ', ' '}
+        };
 
-    for (int turn = 0; turn < 9; turn++) {
-        print_board(board);
+        char player = 'X';
+        char winner = ' ';
 
-        int pos = read_position(board, player);   // 拿到的一定是有效的位置
+        // 內圈：一局裡最多下 9 手
+        for (int turn = 0; turn < 9; turn++) {
+            print_board(board);
 
-        int row = (pos - 1) / 3;
-        int col = (pos - 1) % 3;
-        board[row][col] = player;
+            int pos = read_position(board, player);
 
-        winner = check_winner(board);
-        if (winner != ' ') {
-            break;
+            int row = (pos - 1) / 3;
+            int col = (pos - 1) % 3;
+            board[row][col] = player;
+
+            winner = check_winner(board);
+            if (winner != ' ') {
+                break;
+            }
+
+            player = (player == 'X') ? 'O' : 'X';
         }
 
-        player = (player == 'X') ? 'O' : 'X';
-    }
+        print_board(board);
 
-    print_board(board);
+        if (winner != ' ') {
+            printf("Player %c wins!\n", winner);
+        } else {
+            printf("It's a draw!\n");
+        }
 
-    if (winner != ' ') {
-        printf("Player %c wins!\n", winner);
-    } else {
-        printf("It's a draw!\n");
-    }
+        // 詢問是否再玩一局
+        printf("Play again? (y/n): ");
+        scanf(" %c", &again);   // %c 前面的空格會略過殘留的換行
+        clear_input();          // 把這一行剩下的字元清掉，避免影響下一局的輸入
 
+    } while (again == 'y' || again == 'Y');
+
+    printf("Thanks for playing!\n");
     return 0;
 }
