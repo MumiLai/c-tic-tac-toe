@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 
 // 清除輸入緩衝區：把這一行剩下的字元讀掉，直到換行為止
@@ -90,12 +91,53 @@ char check_winner(char board[3][3]) {
     return ' ';
 }
 
-int main(void) {
-    char again = 'n';   // 存放「要不要再玩」的回答
+// 電腦下棋(隨機亂數）：從所有空格中隨機挑一格，回傳位置 1~9
+int computer_move(char board[3][3]) {
+    int empty[9];    // 存放所有空格的編號
+    int count = 0;   // 目前找到幾個空格
 
-    // 外圈迴圈：每跑一輪就是完整的一局遊戲
+    for (int pos = 1; pos <= 9; pos++) {
+        int row = (pos - 1) / 3;
+        int col = (pos - 1) % 3;
+        if (board[row][col] == ' ') {
+            empty[count] = pos;
+            count++;
+        }
+    }
+
+    // rand() % count 會得到 0 到 count-1，剛好可以當作 empty 陣列的索引
+    return empty[rand() % count];
+}
+
+// 讓玩家選擇模式：1 是雙人對戰，2 是對電腦
+int choose_mode(void) {
+    int mode;
+    int result;
+
+    while (1) {
+        printf("Select mode: 1) Two players  2) Play against computer: ");
+        result = scanf("%d", &mode);
+
+        if (result == EOF) {
+            exit(0);
+        }
+
+        clear_input();
+
+        if (result == 1 && (mode == 1 || mode == 2)) {
+            return mode;
+        }
+        printf("Please enter 1 or 2.\n");
+    }
+}
+
+int main(void) {
+    srand((unsigned int)time(NULL));   // 亂數種子只設定一次
+    char again = 'n';
+
     do {
-        // 宣告在外圈裡面，每一局開始都會重新建立：棋盤清空、X 先手、還沒有贏家
+        int mode = choose_mode();   // 每一局開始前選擇模式
+
         char board[3][3] = {
             {' ', ' ', ' '},
             {' ', ' ', ' '},
@@ -105,11 +147,17 @@ int main(void) {
         char player = 'X';
         char winner = ' ';
 
-        // 內圈：一局裡最多下 9 手
         for (int turn = 0; turn < 9; turn++) {
             print_board(board);
 
-            int pos = read_position(board, player);
+            int pos;
+            // 對電腦模式時，人類是 X，電腦是 O
+            if (mode == 2 && player == 'O') {
+                pos = computer_move(board);
+                printf("Computer (O) chooses position %d.\n", pos);
+            } else {
+                pos = read_position(board, player);
+            }
 
             int row = (pos - 1) / 3;
             int col = (pos - 1) % 3;
@@ -131,10 +179,9 @@ int main(void) {
             printf("It's a draw!\n");
         }
 
-        // 詢問是否再玩一局
         printf("Play again? (y/n): ");
-        scanf(" %c", &again);   // %c 前面的空格會略過殘留的換行
-        clear_input();          // 把這一行剩下的字元清掉，避免影響下一局的輸入
+        scanf(" %c", &again);
+        clear_input();
 
     } while (again == 'y' || again == 'Y');
 
